@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatter Hub</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { 
+            background-image: url('https://up.yimg.com/ib/th/id/OIP.LRVrLlt13doYrtEhnl0LIQHaEU?pid=Api&rs=1&c=1&qlt=95&w=165&h=96');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+            color: #1c1917;
+        }
+
+        .container { width: 100%; max-width: 580px; }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            padding: 24px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+            margin-bottom: 18px; 
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hidden { display: none !important; }
+        
+        input, textarea { 
+            width: 100%; 
+            padding: 12px 14px; 
+            margin: 8px 0; 
+            border: 1px solid rgba(0, 0, 0, 0.08); 
+            border-radius: 10px; 
+            font-size: 14px; 
+            background: rgba(255, 255, 255, 0.6);
+            color: #1c1917;
+            outline: none;
+        }
+        input:focus, textarea:focus { border-color: #6d28d9; background: #ffffff; }
+
+        button { 
+            background: #6d28d9; 
+            color: #ffffff; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: background 0.2s;
+        }
+        button:hover { background: #5b21b6; }
+        button:active { transform: scale(0.98); }
+
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .post-actions { display: flex; align-items: center; gap: 8px; }
+        .username { font-weight: 600; color: #4c1d95; font-size: 14px; }
+        
+        .delete-btn {
+            background: none;
+            color: #ef4444;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .delete-btn:hover { background: #fee2e2; color: #b91c1c; }
+
+        .clickable-user { color: #0284c7; font-weight: 500; cursor: pointer; margin: 4px 0; font-size: 13px; }
+        .clickable-user:hover { text-decoration: underline; }
+        
+        /* Interactive Utilities Styling Area */
+        .like-bar { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+        .like-btn { background: #f3e8ff; color: #6d28d9; padding: 6px 14px; font-size: 13px; border-radius: 20px; border: none; }
+        .like-btn.liked { background: #6d28d9; color: #ffffff; }
+        .likes-count { font-size: 13px; font-weight: 600; color: #4c1d95; }
+
+        .comment-section { background: rgba(255, 255, 255, 0.6); padding: 12px 16px; border-radius: 12px; margin-top: 14px; border: 1px solid rgba(255, 255, 255, 0.4); }
+        .comment { margin: 6px 0; font-size: 13px; color: #44403c; line-height: 1.4; }
+        
+        .stats-list { font-size: 13px; margin-top: 4px; background: rgba(255, 255, 255, 0.5); padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); max-height: 110px; overflow-y: auto; }
+        .chat-box { background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.3); padding: 14px; border-radius: 12px; margin-top: 15px; }
+        
+        .msg { margin: 6px 0; padding: 10px 14px; border-radius: 12px; font-size: 13px; max-width: 80%; line-height: 1.4; }
+        .msg.sent { background: #f3e8ff; color: #6b21a8; margin-left: auto; text-align: right; }
+        .msg.received { background: rgba(255, 255, 255, 0.7); color: #1c1917; }
+        
+        hr { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.4); margin: 20px 0; }
+        h2, h3, h4 { font-weight: 700; letter-spacing: -0.3px; margin-top: 0; color: #2e1065; }
+
+        .forgot-link { display: block; text-align: right; font-size: 12px; color: #6b21a8; text-decoration: none; margin: 4px 0 12px 0; cursor: pointer; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(46, 16, 101, 0.15); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 100; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="auth-view" class="card">
+        <h2>Chatter Hub</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <span class="forgot-link" onclick="toggleResetModal(true)">Forgot password?</span>
+        <button onclick="handleAuth('login')" style="width: 100%;">Log In</button>
+        <button onclick="handleAuth('register')" style="background: rgba(255, 255, 255, 0.6); color: #1c1917; border: 1px solid rgba(0,0,0,0.05); margin-top: 8px; width: 100%;">Create Account</button>
+    </div>
+
+    <div id="reset-modal" class="modal-overlay">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>Reset Password</h3>
+            <p style="font-size: 13px; color: #4c1d95; margin-top: -8px; line-height: 1.4;">Enter credentials below to update security passwords.</p>
+            <input type="text" id="reset-username" placeholder="Confirm Username">
+            <input type="password" id="reset-new-password" placeholder="New Password">
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button onclick="submitPasswordReset()" style="flex: 2;">Reset Password</button>
+                <button onclick="toggleResetModal(false)" style="background: rgba(255, 255, 255, 0.6); color: #1c1917; flex: 1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="feed-view" class="card hidden">
+        <div class="post-header">
+            <h3 id="user-display" style="margin: 0;">Feed</h3>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="deleteAccount()" style="background: none; color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.3); padding: 6px 14px; font-size: 13px;">Delete Account</button>
+                <button onclick="location.reload()" style="background: #fee2e2; color: #ef4444; padding: 6px 14px;">Logout</button>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.4); padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.4);">
+            <div style="display: flex; gap: 40px; font-weight: 600; margin-bottom: 12px; font-size: 14px;">
+                <div>Followers: <span id="stat-followers-count" style="color: #0284c7;">0</span></div>
+                <div>Following: <span id="stat-following-count" style="color: #0284c7;">0</span></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                    <strong style="font-size: 11px; color: #4c1d95; text-transform: uppercase;">Followers</strong>
+                    <div id="followers-names" class="stats-list">None yet</div>
+                </div>
+                <div>
+                    <strong style="font-size: 11px; color: #4c1d95; text-transform: uppercase;">Following</strong>
+                    <div id="following-names" class="stats-list">None yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="interaction-box" class="card hidden" style="border-left: 4px solid #6d28d9; background: rgba(255, 255, 255, 0.9);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
+                <h4 id="target-user-header" style="margin:0;">Interacting</h4>
+                <button onclick="document.getElementById('interaction-box').classList.add('hidden')" style="background:rgba(255, 255, 255, 0.6); color:#1c1917; padding:4px 12px; font-size:12px;">Close</button>
+            </div>
+            
+            <div style="margin-top: 12px;">
+                <strong style="font-size: 11px; color:#4c1d95; text-transform: uppercase;">Recent Activity:</strong>
+                <div id="target-activity-log" style="font-size:13px; background: rgba(255, 255, 255, 0.5); padding: 8px 12px; border-radius: 8px; margin-top: 6px; color: #44403c;"></div>
+            </div>
+
+            <div class="chat-box">
+                <strong style="font-size: 11px; color: #4c1d95; text-transform: uppercase;">Messages:</strong>
+                <div id="chat-messages" style="height: 150px; overflow-y: auto; margin: 10px 0; background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column;"></div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="chat-input" placeholder="Write a message..." style="margin:0; background: #ffffff;">
+                    <button onclick="sendDirectMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <textarea id="post-text" rows="3" placeholder="What's on your mind?"></textarea>
+        <input type="file" id="post-image" accept="image/*" style="margin-top: 0; background: #ffffff; border: 1px dashed #cbd5e1;">
+        <button onclick="submitPost()" style="width: 100%; margin-top: 8px;">Publish Post</button>
+        <hr>
+        <div id="feed-container"></div>
+    </div>
+</div>
+
+<script>
+    let activeUser = "";
+    let chatTargetUser = "";
+
+    function toggleResetModal(show) {
+        const modal = document.getElementById('reset-modal');
+        if(show) modal.style.display = 'flex';
+        else {
+            modal.style.display = 'none';
+            document.getElementById('reset-username').value = "";
+            document.getElementById('reset-new-password').value = "";
+        }
+    }
+
+    async function submitPasswordReset() {
+        const username = document.getElementById('reset-username').value;
+        const newPassword = document.getElementById('reset-new-password').value;
+        if(!username || !newPassword) return alert("Please fill out all fields.");
+        
+        const response = await fetch('/api/password-reset/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, new_password: newPassword })
+        });
+        if(response.ok) {
+            alert("Password updated successfully!");
+            toggleResetModal(false);
+        } else {
+            alert("Reset failed.");
+        }
+    }
+
+    async function deleteAccount() {
+        if (!confirm("Are you sure you want to delete your account?")) return;
+        const response = await fetch('/api/user/delete/', { method: 'POST' });
+        if (response.ok) { location.reload(); }
+    }
+
+    async function handleAuth(action) {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        if (!username || !password) return alert("Please fill in all fields");
+
+        const response = await fetch(`/api/${action}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            activeUser = data.username;
+            document.getElementById('user-display').innerText = `@${activeUser}`;
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('feed-view').classList.remove('hidden');
+            fetchFeed();
+            updateProfileStats();
+        } else {
+            alert(data.error || "Authentication failed");
+        }
+    }
+
+    async function updateProfileStats() {
+        const response = await fetch('/api/profile/stats/');
+        if (response.ok) {
+            const stats = await response.json();
+            document.getElementById('stat-followers-count').innerText = stats.followers.length;
+            document.getElementById('stat-following-count').innerText = stats.following.length;
+            
+            document.getElementById('followers-names').innerHTML = stats.followers.length > 0 
+                ? stats.followers.map(name => `<div class="clickable-user" onclick="openUserHub('${name}')">@${name}</div>`).join('') : "None yet";
+                
+            document.getElementById('following-names').innerHTML = stats.following.length > 0 
+                ? stats.following.map(name => `<div class="clickable-user" onclick="openUserHub('${name}')">@${name}</div>`).join('') : "None yet";
+        }
+    }
+
+    async function openUserHub(username) {
+        chatTargetUser = username;
+        document.getElementById('target-user-header').innerText = `@${username}`;
+        document.getElementById('interaction-box').classList.remove('hidden');
+        
+        const actRes = await fetch(`/api/activity/${username}/`);
+        const actData = await actRes.json();
+        document.getElementById('target-activity-log').innerHTML = actData.activities.length > 0 
+            ? actData.activities.map(act => `<div style="margin:2px 0;">• ${act}</div>`).join('') : "No recent activities.";
+        loadChatMessages();
+    }
+
+    async function loadChatMessages() {
+        if(!chatTargetUser) return;
+        const response = await fetch(`/api/chat/${chatTargetUser}/`);
+        const data = await response.json();
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML = data.messages.map(m => `
+            <div class="msg ${m.sender === activeUser ? 'sent' : 'received'}">
+                <strong>${m.sender}:</strong> ${m.text}
+            </div>
+        `).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendDirectMessage() {
+        const text = document.getElementById('chat-input').value;
+        if (!text.trim() || !chatTargetUser) return;
+        await fetch(`/api/chat/${chatTargetUser}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        document.getElementById('chat-input').value = "";
+        loadChatMessages();
+    }
+
+    async function toggleLike(postId) {
+        const response = await fetch(`/api/posts/${postId}/like/`, { method: 'POST' });
+        if (response.ok) {
+            fetchFeed(); // Refresh elements layout cleanly
+        }
+    }
+
+    async function fetchFeed() {
+        const response = await fetch('/api/posts/');
+        const data = await response.json();
+        const container = document.getElementById('feed-container');
+        container.innerHTML = "";
+
+        data.posts.forEach(post => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            let actionMarkup = post.username === activeUser 
+                ? `<button class="delete-btn" onclick="deletePost(${post.id})">Delete</button>`
+                : `<button class="follow-btn" onclick="toggleFollow('${post.username}')" style="background: rgba(255,255,255,0.6); color:#1c1917; padding:5px 12px; font-size:12px; border-radius:6px; font-weight:500; border:1px solid rgba(0,0,0,0.05); cursor:pointer;">Follow</button>`;
+
+            let imageMarkup = post.image_url 
+                ? `<img src="${post.image_url}" style="width: 100%; max-height: 380px; object-fit: cover; border-radius: 12px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.4);">` : "";
+
+            card.innerHTML = `
+                <div class="post-header">
+                    <span class="username" style="cursor:pointer;" onclick="openUserHub('${post.username}')">@${post.username}</span>
+                    <div class="post-actions">${actionMarkup}</div>
+                </div>
+                <p style="margin: 0 0 12px 0; color: #27272a; line-height:1.5; font-size:14px;">${post.content}</p>
+                ${imageMarkup}
+                
+                <div class="like-bar">
+                    <button class="like-btn ${post.is_liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                        ${post.is_liked ? '❤️ Liked' : '🤍 Like'}
+                    </button>
+                    <span class="likes-count">${post.likes_count} likes</span>
+                </div>
+
+                <div class="comment-section">
+                    <div id="comments-box-${post.id}">
+                        ${post.comments.map(c => `<div class="comment"><strong>@${c.user__username}:</strong> ${c.content}</div>`).join('')}
+                    </div>
+                    <div style="display: flex; margin-top: 10px; gap: 8px;">
+                        <input type="text" id="comment-input-${post.id}" placeholder="Write a comment..." style="margin:0; padding: 8px 12px; background:#ffffff;">
+                        <button onclick="submitComment(${post.id})" style="padding: 8px 14px; background:#6d28d9; color:#ffffff;">Reply</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function submitPost() {
+        const content = document.getElementById('post-text').value;
+        const imageFile = document.getElementById('post-image').files[0];
+        if (!content.trim() && !imageFile) return alert("Please enter text or choose an image file.");
+
+        const formData = new FormData();
+        formData.append('content', content);
+        if (imageFile) formData.append('image', imageFile);
+
+        await fetch('/api/posts/', { method: 'POST', body: formData });
+        document.getElementById('post-text').value = "";
+        document.getElementById('post-image').value = ""; 
+        fetchFeed();
+    }
+
+    async function deletePost(postId) {
+        if (!confirm("Are you sure?")) return;
+        const response = await fetch(`/api/posts/${postId}/delete/`, { method: 'POST' });
+        if (response.ok) fetchFeed();
+    }
+
+    async function submitComment(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (!input.value.trim()) return;
+        await fetch(`/api/posts/${postId}/comment/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: input.value })
+        });
+        input.value = "";
+        fetchFeed();
+    }
+
+    async function toggleFollow(username) {
+        const response = await fetch(`/api/users/${username}/follow/`, { method: 'POST' });
+        fetchFeed();
+        updateProfileStats();
+    }
+</script>
+</body>
+</html>
