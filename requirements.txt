@@ -50,3 +50,4 @@ typing_extensions==4.15.0
 tzdata==2025.3
 urllib3==2.6.0
 Werkzeug==3.1.4
+gunicorn==21.2.0
